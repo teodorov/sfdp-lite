@@ -24,12 +24,21 @@
 
 #include "jet.h"
 
-#define real double
-#define FALSE 0
-#define TRUE (!FALSE)
 
-#define MAX(x,y) x<y?y:x
-#define MIN(x,y) x<y?x:y
+#define real double
+
+typedef struct {
+    char   *inputFile;
+    char   *outputFile;
+    char   *positionFile;
+    char   *traceFile;
+    char   *layoutFile;
+    int     scaleX;
+    int     scaleY;
+    float   alpha;
+    boolean isJet;
+    boolean isSpanning;
+} arguments_t;
 
 typedef struct pointf_s { double x, y; } pointf;
 
@@ -52,8 +61,32 @@ SparseMatrix makeSparseMatrix(int nz, int m, int n, int *i, int *j) {
     return theSparse;
 }
 
+#define JET_COLORS
+//#define SHOW_TRACE
 
-void draw_embedding(SparseMatrix A, real *x, const char *outFilePath){
+#ifdef SHOW_TRACE
+//#define TRACE_SIZE 40
+//int trace[40][2] = {{258, 525},{80, 345},{895, 347},{599, 616},{624, 643},{480, 389},{921, 555},{555, 561},{822, 67},{58, 318},{997, 242},{879, 894},{135, 152},{981, 997},{67, 80},{900, 921},{643, 900},{189, 480},{242, 258},{894, 135},{700, 718},{238, 879},{561, 636},{525, 540},{636, 189},{540, 810},{41, 58},{152, 416},{318, 335},{335, 599},{416, 432},{347, 41},{389, 684},{345, 359},{684, 238},{810, 822},{616, 879},{359, 624},{432, 700},{718, 981}};
+
+#define TRACE_SIZE 66
+int trace[66][2] = {{1, 2},{2, 5},{5, 10},{10, 13},{13, 16},{16, 19},{19, 22},{22, 25},{25, 28},{28, 31},{31, 34},{34, 37},{37, 40},{40, 43},{43, 46},{46, 49},{49, 52},{52, 55},{55, 58},{58, 61},{61, 64},{64, 67},{67, 70},{70, 73},{73, 76},{76, 79},{79, 82},{82, 85},{85, 88},{88, 91},{91, 94},{94, 97},{97, 102},{102, 112},{112, 136},{136, 160},{160, 190},{190, 226},{226, 268},{268, 316},{316, 370},{370, 397},{397, 424},{424, 451},{451, 478},{478, 505},{505, 532},{532, 559},{559, 586},{586, 613},{613, 640},{640, 667},{667, 694},{694, 721},{721, 748},{748, 775},{775, 802},{802, 829},{829, 856},{856, 883},{883, 910},{910, 937},{937, 964},{964, 991},{991, 1022},{1022, 112}};
+#endif
+
+int * read_trace(const char *inTraceFile, int *outTraceSize) {
+    int * theTrace;
+    FILE *f = fopen(inTraceFile, "r");
+    fscanf(f, "%d", outTraceSize);
+    theTrace = (int*)calloc(*outTraceSize*2, sizeof(real));
+    for (int i = 0; i < *outTraceSize; ++i) {
+        int *npos = theTrace + 2 * i;
+        fscanf(f, "%d %d", &npos[0], &npos[1]);
+    }
+    
+    fclose(f);
+    return theTrace;
+}
+
+void draw_embedding(SparseMatrix A, real *x, arguments_t *args){
     int i, j, *ia=A->ia, *ja = A->ja;
     real xsize, ysize, xmin, xmax, ymin, ymax, absxmin, absymin;
     real maximumDistance = 0;
@@ -61,7 +94,8 @@ void draw_embedding(SparseMatrix A, real *x, const char *outFilePath){
     cairo_surface_t *surface;
     cairo_t *cr;
     
-    int scale = 100;
+    int scalex = args->scaleX;
+    int scaley = args->scaleY;
     
     xmax = xmin = x[0];
     ymax = ymin = x[1];
@@ -74,8 +108,8 @@ void draw_embedding(SparseMatrix A, real *x, const char *outFilePath){
     xsize = xmax-xmin;
     ysize = ymax-ymin;
     xsize = MAX(xsize, ysize);
-    absxmin = (xmin < 0 ? -xmin : xmin)*scale;
-    absymin = (ymin < 0 ? -ymin : ymin)*scale;
+    absxmin = (xmin < 0 ? -xmin : xmin)*scalex;
+    absymin = (ymin < 0 ? -ymin : ymin)*scaley;
     
     //find the maximum distance
     for (i = 0; i < A->m; i++){
@@ -87,9 +121,9 @@ void draw_embedding(SparseMatrix A, real *x, const char *outFilePath){
         }
     }
 
-    printf("drawing size (%lf, %lf)", xsize*scale, ysize*scale);
+    printf("drawing size (%lf, %lf)", xsize*scalex, ysize*scaley);
     
-    surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, xsize*scale, ysize*scale);
+    surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, xsize*scalex, ysize*scaley);
     //cairo_pdf_surface_create(outFilePath, xsize*scale, ysize*scale);
     cr = cairo_create (surface);
     
@@ -106,39 +140,59 @@ void draw_embedding(SparseMatrix A, real *x, const char *outFilePath){
             int id = floor(dist*1024);
             //get the correct id from jet which is in reverse order
             id = 1024 - id;
-            
-            cairo_set_source_rgba (cr, jet[id][0], jet[id][1], jet[id][2], 0.5);
-
-            cairo_move_to(cr, x[i*2+0]*scale + absxmin, x[i*2+1]*scale + absymin);
-            cairo_line_to(cr, x[ja[j]*2+0]*scale + absxmin, x[ja[j]*2+1]*scale + absymin);
+     
+            if (args->isJet) {
+                cairo_set_source_rgba (cr, jet[id][0], jet[id][1], jet[id][2], args->alpha);
+            } else {
+                cairo_set_source_rgba (cr, 0.5, 0.5, 0.5, args->alpha);
+            }
+            cairo_set_line_width(cr,0.8);
+            cairo_move_to(cr, x[i*2+0]*scalex + absxmin, x[i*2+1]*scaley + absymin);
+            cairo_line_to(cr, x[ja[j]*2+0]*scalex + absxmin, x[ja[j]*2+1]*scaley + absymin);
             
             cairo_stroke(cr);
         }
     }
 
-//    cairo_set_source_rgb(cr, 0, 0, 1);
-//    cairo_arc(cr, x[0]*scale*absxmin, x[1]*scale + absymin, 100, 0, 2*M_PI);
-//    cairo_fill(cr);
-
+    if (args->traceFile == NULL) {
+        cairo_set_source_rgb(cr, 0, 1, 0);
+        cairo_arc(cr, x[0]*scalex+absxmin, x[1]*scaley + absymin, 0.05*scaley, 0, 2*M_PI);
+        cairo_fill(cr);
+    } else {
+        int   theTraceSize;
+        int  *theTrace      = read_trace(args->traceFile, &theTraceSize);
+        for (i = 0; i < theTraceSize; i++) {
+            int *npos = theTrace + 2 * i;
+            cairo_set_source_rgb(cr, 0, 0, 0);
+            cairo_set_line_width(cr,3.0);
+            cairo_move_to(cr, x[(npos[0]-1)*2+0]*scalex + absxmin, x[(npos[0]-1)*2+1]*scaley + absymin);
+            cairo_line_to(cr, x[(npos[1]-1)*2+0]*scalex + absxmin, x[(npos[1]-1)*2+1]*scaley + absymin);
+        
+            cairo_stroke(cr);
+        }
+    }
     //cairo_surface_finish(surface);
-    cairo_surface_write_to_png(surface , outFilePath);
+    cairo_surface_write_to_png(surface , args->outputFile);
 }
 
-#define PDF_OBP "./examples/obp.pdf"
-#define PDF_OBP1 "./examples/obp1.pdf"
-#define PDF_OBP2 "./examples/obp2.png"
-#define PDF_OBP3 "./examples/obp3.png"
-#define PDF_OBP4 "./examples/obp4.png"
-#define PDF_UTM "./examples/utm1700b.pdf"
-#define PDF_FILE_PATH PDF_OBP4
-#define DOLAYOUT FALSE
-#define SPANNING_TREE FALSE
 
-void doSfdpLayout(SparseMatrix matrix, spring_electrical_control ctrl, short doLayout, real *positions, FILE *outPositions) {
+void doSfdpLayout(SparseMatrix matrix,
+                  spring_electrical_control ctrl,
+                  arguments_t *args) {
     int flag;
     clock_t runtime;
+    FILE *thePositionsFile = NULL;
     
-    if (doLayout) {
+    //initial node position is (0,0)
+    real *positions = (real*)calloc(2 * matrix->n, sizeof(real));
+    if (args->layoutFile == NULL) {
+        //prepare the output file
+        thePositionsFile = args->positionFile==NULL ? stdout : fopen(args->positionFile, "w");
+        
+        if (thePositionsFile != stdout && thePositionsFile == NULL) {
+            fprintf(stderr, "Could not open the specified position file\n");
+            exit(1);
+        }
         //start layouting
         printf("starting SFDP layout\n");
         runtime = clock();
@@ -151,32 +205,48 @@ void doSfdpLayout(SparseMatrix matrix, spring_electrical_control ctrl, short doL
         int i;
         for (i = 0; i < matrix->n; ++i) {
             real *npos = positions + 2 * i;
-            fprintf(outPositions, "%lg %lg\n", npos[0], npos[1]);
+            fprintf(thePositionsFile, "%lg %lg\n", npos[0], npos[1]);
         }
         runtime = clock() - runtime;
         printf("Wrote positions took %f seconds\n", (float)runtime / CLOCKS_PER_SEC);
+    } else {
+        //the layout is precomputed read it from the file
+        FILE *f = fopen(args->layoutFile, "r");
+        
+        for (int i = 0; i < matrix->n; ++i) {
+            real *npos = positions + 2 * i;
+            fscanf(f, "%lg %lg", &npos[0], &npos[1]);
+        }
+        
+        fclose(f);
     }
     
     //draw the embedding with cairo
     printf("starting drawing\n");
     runtime = clock();
-    draw_embedding(matrix, positions, PDF_FILE_PATH);
+    draw_embedding(matrix, positions, args);
     runtime = clock() - runtime;
     printf("Drawing layout took %f seconds\n", (float)runtime / CLOCKS_PER_SEC);
     
     //free the matrix
     SparseMatrix_delete(matrix);
+    
+    if (thePositionsFile != stdout && thePositionsFile != NULL) fclose(thePositionsFile);
+    
+    free(positions);
 }
 
 static void tuneControl(spring_electrical_control ctrl) {
     ctrl->random_seed = (unsigned) getpid() ^ (unsigned) time(NULL);
     ctrl->K = -1;
+    ctrl->q = -2.0;
     ctrl->p = -1.0 * -AUTOP;
+    //ctrl->tol = 0.00000001;
     ctrl->multilevels = INT_MAX;
     ctrl->smoothing = SMOOTHING_NONE;
     ctrl->tscheme = QUAD_TREE_NORMAL;
     ctrl->method = METHOD_SPRING_ELECTRICAL;
-    ctrl->beautify_leaves = FALSE;
+    ctrl->beautify_leaves = TRUE;
     ctrl->do_shrinking = TRUE;
     ctrl->rotation = 0.0;
     ctrl->edge_labeling_scheme = 0;
@@ -286,27 +356,21 @@ SparseMatrix computeSpanningTree(SparseMatrix matrix) {
     return spanning;
 }
 
-int main(int argc, const char * argv[])
+int sfdp_main(arguments_t *args)
 {
-
     MM_typecode theMatcode;
     int         theM,       theN, theNZ;
     int        *theI,      *theJ;
     double     *theValues;
-    FILE *thePositionsFile = NULL;
     SparseMatrix theSparse;
     spring_electrical_control ctrl = spring_electrical_control_new();
     
-    if (argc < 2 || (argc > 2 && argc < 4)) {
-        fprintf(stderr, "Usage %s [matrix-market-filename] -o [positions-file]\n", argv[0]);
-        exit(1);
-    }
     //read the graph from matrix market file
-    if (mm_read_mtx_crd(argv[1],
-                    &theM, &theN, &theNZ,
-                    &theI, &theJ, &theValues,
+    if (mm_read_mtx_crd(args->inputFile,
+                        &theM, &theN, &theNZ,
+                        &theI, &theJ, &theValues,
                         &theMatcode) != 0) {
-        fprintf(stderr, "Failed reading file %s\n", argv[1]);
+        fprintf(stderr, "Failed reading file %s\n", args->inputFile);
         exit(1);
     }
     
@@ -315,7 +379,7 @@ int main(int argc, const char * argv[])
     //make sparse matrix
     theSparse = makeSparseMatrix(theNZ, theM, theN, theI, theJ);
     
-    if (SPANNING_TREE) {
+    if (args->isSpanning) {
         SparseMatrix spanning;
         spanning = computeSpanningTree(theSparse);
         SparseMatrix_delete(theSparse);
@@ -328,45 +392,96 @@ int main(int argc, const char * argv[])
     
     printf("Sparse created\n");
     
-
-
+    
+    
     
     tuneControl(ctrl);
     //only one connected component in graphs from OBP
     
-    //initial node position is (0,0)
-    real *positions = (real*)calloc(2 * theN, sizeof(real));
-    if (DOLAYOUT) {
-        //prepare the output file
-        thePositionsFile = argc == 2 ? stdout : fopen(argv[3], "w");
-        
-        if (thePositionsFile != stdout && thePositionsFile == NULL) {
-            fprintf(stderr, "Could not open the specified output file\n");
-            exit(1);
-        }
-
-    }
-    else {
-        FILE *f = fopen(argv[3], "r");
-        
-        for (int i = 0; i < theSparse->n; ++i) {
-            real *npos = positions + 2 * i;
-            fscanf(f, "%lg %lg", &npos[0], &npos[1]);
-            //printf("%lg %lg\n", npos[0], npos[1]);
-        }
-        
-        fclose(f);
-    }
-    doSfdpLayout(theSparse, ctrl, DOLAYOUT, positions, thePositionsFile);
+    doSfdpLayout(theSparse, ctrl, args);
     
     spring_electrical_control_delete(ctrl);
     
-    if (thePositionsFile != stdout) fclose(thePositionsFile);
-    
-    free(positions);
-    printf("Finished saving\n");
-
     return 0;
 }
+
+
+
+void
+usage(int estatus) {
+    printf("Usage: sfdp-lite [-options] <mtx-file>\n");
+    printf(" where the options include:\n");
+    printf("\t[-t file | --show-trace file]\t specify a trace file\n");
+    printf("\t[-o file | --output file]\t specify the output filename [default=output.png]\n");
+    printf("\t[-p file | --position file]\t specify the position filename\n");
+    printf("\t[-r file | --read-layout file]\t read a layout from the file");
+    printf("\t[-x int | --scale-x int]\t\t scale x\n");
+    printf("\t[-y int | --scale-y int]\t\t scale y\n");
+    printf("\t[-a float | --alpha float]\t\t alpha in [0,1]\n");
+    printf("\t[-j | --jet]\t\t\t\t\t\t jet colors\n");
+    printf("\t[-s | --spanning]\t\t\t\t compute spanning tree layout\n");
+    printf("\t[-v | --version]\t\t\t\t\t\t print sfpd-lite version and exit\n");
+    printf("\t[-h | --help]\t\t\t\t\t\t print this help\n");
+    
+    exit(estatus);
+}
+#define VERSION_NUM "v1.0"
+void
+print_version() {
+    printf("sfdp-lite %s\n", VERSION_NUM);
+}
+
+
+
+int main(int argc, const char * argv[]) {
+    int i;
+    arguments_t args = {NULL, NULL, NULL, NULL, NULL, 100, 100, 0.5, TRUE, FALSE};
+    for (i=1; i<argc-1;i++){
+        if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i],"--output") == 0) {
+            if (i+1 > argc) { usage(1); }
+            args.outputFile = (char*)argv[i+1];
+            i++;
+        } else if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i],"--show-trace") == 0) {
+            if (i+1 > argc) { usage(1); }
+            args.traceFile = (char*)argv[i+1];
+            i++;
+        } else if (strcmp(argv[i], "-r") == 0 || strcmp(argv[i],"--read-layout") == 0) {
+            if (i+1 > argc) { usage(1); }
+            args.layoutFile = (char*)argv[i+1];
+            i++;
+        } else if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i],"--position") == 0) {
+            if (i+1 > argc) { usage(1); }
+            args.positionFile = (char*)argv[i+1];
+            i++;
+        } else if (strcmp(argv[i], "-x") == 0 || strcmp(argv[i],"--scale-x") == 0) {
+            if (i+1 > argc) { usage(1); }
+            args.scaleX = atoi(argv[i+1]);
+            i++;
+        } else if (strcmp(argv[i], "-y") == 0 || strcmp(argv[i],"--scale-y") == 0) {
+            if (i+1 > argc) { usage(1); }
+            args.scaleY = atoi(argv[i+1]);
+            i++;
+        } else if (strcmp(argv[i], "-a") == 0 || strcmp(argv[i],"--alpha") == 0) {
+            if (i+1 > argc) { usage(1); }
+            args.alpha = atoi(argv[i+1]);
+            i++;
+        } else if (strcmp(argv[i], "-j") == 0 || strcmp(argv[i],"--no-jet") == 0) {
+            if (i+1 > argc) { usage(1); }
+            args.isJet = FALSE;
+        } else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i],"--spanning") == 0) {
+            if (i+1 > argc) { usage(1); }
+            args.isSpanning = TRUE;
+        } else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i],"--version") == 0) {
+            print_version();
+            exit(0);
+        } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i],"--help") == 0) {
+            usage(0);
+        }
+    }
+    args.inputFile = (char*) argv[i];
+    
+    return sfdp_main(&args);
+}
+
 
 
