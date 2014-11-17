@@ -24,6 +24,9 @@
 
 #include "jet.h"
 
+#ifndef boolean
+#define boolean _Bool
+#endif
 
 #define real double
 
