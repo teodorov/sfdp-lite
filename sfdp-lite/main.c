@@ -36,6 +36,7 @@ typedef struct {
     char   *positionFile;
     char   *traceFile;
     char   *layoutFile;
+    char   *initialPositionsFile;
     int     scaleX;
     int     scaleY;
     float   alpha;
@@ -178,50 +179,66 @@ void draw_embedding(SparseMatrix A, real *x, arguments_t *args){
     cairo_surface_write_to_png(surface , args->outputFile);
 }
 
+void readPositions(const char *inFile, real *positions, int size) {
+    //the layout is precomputed read it from the file
+    FILE *f = fopen(inFile, "r");
+    
+    for (int i = 0; i < size; ++i) {
+        real *npos = positions + 2 * i;
+        fscanf(f, "%lg %lg", &npos[0], &npos[1]);
+    }
+    
+    fclose(f);
+}
+
+void writePositions(const char *outFile, real *positions, int size) {
+    //prepare the output file
+    FILE *theFile = fopen(args->positionFile, "w");
+    
+    if (thePositionsFile == NULL) {
+        fprintf(stderr, "Could not write positions in %s file\n", outFile);
+        exit(1);
+    }
+
+    //write position in the file
+    runtime = clock();
+    int i;
+    for (i = 0; i < size; ++i) {
+        real *npos = positions + 2 * i;
+        fprintf(thePositionsFile, "%lg %lg\n", npos[0], npos[1]);
+    }
+    runtime = clock() - runtime;
+    printf("Wrote positions took %f seconds\n", (float)runtime / CLOCKS_PER_SEC);
+    if (theFile != NULL) fclose(thePositionsFile);
+}
 
 void doSfdpLayout(SparseMatrix matrix,
                   spring_electrical_control ctrl,
                   arguments_t *args) {
     int flag;
     clock_t runtime;
-    FILE *thePositionsFile = NULL;
     
     //initial node position is (0,0)
     real *positions = (real*)calloc(2 * matrix->n, sizeof(real));
     if (args->layoutFile == NULL) {
-        //prepare the output file
-        thePositionsFile = args->positionFile==NULL ? stdout : fopen(args->positionFile, "w");
-        
-        if (thePositionsFile != stdout && thePositionsFile == NULL) {
-            fprintf(stderr, "Could not open the specified position file\n");
-            exit(1);
+        if (args->initialPositionsFile != NULL) {
+            readPositions(args->initialPositionsFile, positions, matrix->n);
         }
+        
         //start layouting
         printf("starting SFDP layout\n");
         runtime = clock();
         multilevel_spring_electrical_embedding(2, matrix, NULL, ctrl, NULL, NULL, positions, 0, NULL, &flag);
         runtime = clock() - runtime;
         printf("Finished layout in %f seconds\n", (float)runtime / CLOCKS_PER_SEC);
-        
-        //write position in the file
-        runtime = clock();
-        int i;
-        for (i = 0; i < matrix->n; ++i) {
-            real *npos = positions + 2 * i;
-            fprintf(thePositionsFile, "%lg %lg\n", npos[0], npos[1]);
-        }
-        runtime = clock() - runtime;
-        printf("Wrote positions took %f seconds\n", (float)runtime / CLOCKS_PER_SEC);
+       
+        if (args->positionFile) {
+            writePositions(args->positionFile, positions, matrix->n);
+        } 
+       
     } else {
         //the layout is precomputed read it from the file
-        FILE *f = fopen(args->layoutFile, "r");
-        
-        for (int i = 0; i < matrix->n; ++i) {
-            real *npos = positions + 2 * i;
-            fscanf(f, "%lg %lg", &npos[0], &npos[1]);
-        }
-        
-        fclose(f);
+        readPositions(args->layoutFile, positions, matrix->n);
     }
     
     //draw the embedding with cairo
@@ -233,8 +250,6 @@ void doSfdpLayout(SparseMatrix matrix,
     
     //free the matrix
     SparseMatrix_delete(matrix);
-    
-    if (thePositionsFile != stdout && thePositionsFile != NULL) fclose(thePositionsFile);
     
     free(positions);
 }
@@ -418,6 +433,7 @@ usage(int estatus) {
     printf("\t[-o file | --output file]\t specify the output filename [default=output.png]\n");
     printf("\t[-p file | --position file]\t specify the position filename\n");
     printf("\t[-r file | --read-layout file]\t read a layout from the file");
+    printf("\t[-i file | --initial-positions file]\t read initial positions from file");
     printf("\t[-x int | --scale-x int]\t\t scale x\n");
     printf("\t[-y int | --scale-y int]\t\t scale y\n");
     printf("\t[-a float | --alpha float]\t\t alpha in [0,1]\n");
@@ -434,8 +450,6 @@ print_version() {
     printf("sfdp-lite %s\n", VERSION_NUM);
 }
 
-
-
 int main(int argc, const char * argv[]) {
     int i;
     arguments_t args = {NULL, NULL, NULL, NULL, NULL, 100, 100, 0.5, TRUE, FALSE};
@@ -451,6 +465,10 @@ int main(int argc, const char * argv[]) {
         } else if (strcmp(argv[i], "-r") == 0 || strcmp(argv[i],"--read-layout") == 0) {
             if (i+1 > argc) { usage(1); }
             args.layoutFile = (char*)argv[i+1];
+            i++;
+        } else if (strcmp(argv[i], "-i") == 0 || strcmp(argv[i],"--initial-positions") == 0) {
+            if (i+1 > argc) { usage(1); }
+            args.initialPositionsFile = (char*)argv[i+1];
             i++;
         } else if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i],"--position") == 0) {
             if (i+1 > argc) { usage(1); }
