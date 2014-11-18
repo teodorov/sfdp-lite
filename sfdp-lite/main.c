@@ -196,7 +196,7 @@ void writePositions(const char *outFile, real *positions, int size) {
     //prepare the output file
     FILE *theFile = fopen(outFile, "w");
     
-    if (thePositionsFile == NULL) {
+    if (theFile == NULL) {
         fprintf(stderr, "Could not write positions in %s file\n", outFile);
         exit(1);
     }
@@ -206,11 +206,11 @@ void writePositions(const char *outFile, real *positions, int size) {
     int i;
     for (i = 0; i < size; ++i) {
         real *npos = positions + 2 * i;
-        fprintf(outFile, "%lg %lg\n", npos[0], npos[1]);
+        fprintf(theFile, "%lg %lg\n", npos[0], npos[1]);
     }
     runtime = clock() - runtime;
     printf("Wrote positions took %f seconds\n", (float)runtime / CLOCKS_PER_SEC);
-    if (theFile != NULL) fclose(outFile);
+    if (theFile != NULL) fclose(theFile);
 }
 
 void doSfdpLayout(SparseMatrix matrix,
@@ -453,7 +453,7 @@ print_version() {
 
 int main(int argc, const char * argv[]) {
     int i;
-    arguments_t args = {NULL, NULL, NULL, NULL, NULL, 100, 100, 0.5, TRUE, FALSE};
+    arguments_t args = {NULL, NULL, NULL, NULL, NULL, NULL, 100, 100, 0.5, TRUE, FALSE};
     for (i=1; i<argc-1;i++){
         if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i],"--output") == 0) {
             if (i+1 > argc) { usage(1); }
