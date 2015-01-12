@@ -224,6 +224,7 @@ void doSfdpLayout(SparseMatrix matrix,
     if (args->layoutFile == NULL) {
         if (args->initialPositionsFile != NULL) {
             readPositions(args->initialPositionsFile, positions, matrix->n);
+            ctrl->random_start = FALSE;
         }
         
         //start layouting
@@ -264,7 +265,7 @@ static void tuneControl(spring_electrical_control ctrl) {
     ctrl->multilevels = INT_MAX;
     ctrl->smoothing = SMOOTHING_NONE;
     ctrl->tscheme = QUAD_TREE_NORMAL;
-    ctrl->method = METHOD_SPRING_ELECTRICAL;
+    //ctrl->method = METHOD_SPRING_ELECTRICAL;
     ctrl->beautify_leaves = TRUE;
     ctrl->do_shrinking = TRUE;
     ctrl->rotation = 0.0;
