@@ -8,9 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		74174CFA18650B1000F54BF8 /* mmio.c in Sources */ = {isa = PBXBuildFile; fileRef = 74174CE018650B1000F54BF8 /* mmio.c */; };
-		74174D1F186520F400F54BF8 /* libsfdp.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 74174D1E186520F400F54BF8 /* libsfdp.1.dylib */; };
 		74A260831864C55000D28897 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 74A260821864C55000D28897 /* main.c */; };
 		74A260851864C55000D28897 /* sfdp_lite.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 74A260841864C55000D28897 /* sfdp_lite.1 */; };
+		74A55B411A6046D700C47FE7 /* libsfdp.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 74A55B401A6046D700C47FE7 /* libsfdp.1.dylib */; };
 		74CC418E18667FF600B0D5C6 /* libcairo.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 74CC418D18667FF600B0D5C6 /* libcairo.2.dylib */; };
 /* End PBXBuildFile section */
 
@@ -30,10 +30,10 @@
 /* Begin PBXFileReference section */
 		74174CE018650B1000F54BF8 /* mmio.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mmio.c; sourceTree = "<group>"; };
 		74174CE118650B1000F54BF8 /* mmio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mmio.h; sourceTree = "<group>"; };
-		74174D1E186520F400F54BF8 /* libsfdp.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsfdp.1.dylib; path = "../graphviz-install/lib/libsfdp.1.dylib"; sourceTree = "<group>"; };
 		74A2607F1864C55000D28897 /* sfdp-lite */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "sfdp-lite"; sourceTree = BUILT_PRODUCTS_DIR; };
 		74A260821864C55000D28897 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		74A260841864C55000D28897 /* sfdp_lite.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = sfdp_lite.1; sourceTree = "<group>"; };
+		74A55B401A6046D700C47FE7 /* libsfdp.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsfdp.1.dylib; path = "../../graphviz/graphviz-install/lib/libsfdp.1.dylib"; sourceTree = "<group>"; };
 		74CC418D18667FF600B0D5C6 /* libcairo.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcairo.2.dylib; path = "../../cairo/cairo-1.12.14_install/lib/libcairo.2.dylib"; sourceTree = "<group>"; };
 		74CC418F1867512000B0D5C6 /* jet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jet.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -43,8 +43,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				74A55B411A6046D700C47FE7 /* libsfdp.1.dylib in Frameworks */,
 				74CC418E18667FF600B0D5C6 /* libcairo.2.dylib in Frameworks */,
-				74174D1F186520F400F54BF8 /* libsfdp.1.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,8 +71,8 @@
 		74A260731864C47500D28897 = {
 			isa = PBXGroup;
 			children = (
+				74A55B401A6046D700C47FE7 /* libsfdp.1.dylib */,
 				74CC418D18667FF600B0D5C6 /* libcairo.2.dylib */,
-				74174D1E186520F400F54BF8 /* libsfdp.1.dylib */,
 				74A260811864C55000D28897 /* sfdp-lite */,
 				74A260801864C55000D28897 /* Products */,
 			);

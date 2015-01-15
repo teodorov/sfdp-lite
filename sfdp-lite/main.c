@@ -499,6 +499,7 @@ int main(int argc, const char * argv[]) {
             exit(0);
         } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i],"--help") == 0) {
             usage(0);
+            exit(0);
         }
     }
     args.inputFile = (char*) argv[i];

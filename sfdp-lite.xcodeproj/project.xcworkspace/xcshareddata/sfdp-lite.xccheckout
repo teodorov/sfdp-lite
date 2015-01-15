@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>63D3C3E3-1671-4EE9-8242-9A8BE5A1D56A</string>
+	<key>IDESourceControlProjectName</key>
+	<string>sfdp-lite</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>77AB17F20CD41319365C5A7F35A1ED911242D677</key>
+		<string>https://github.com/teodorov/sfdp-lite.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>sfdp-lite.xcodeproj</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>77AB17F20CD41319365C5A7F35A1ED911242D677</key>
+		<string>../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/teodorov/sfdp-lite.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>77AB17F20CD41319365C5A7F35A1ED911242D677</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>77AB17F20CD41319365C5A7F35A1ED911242D677</string>
+			<key>IDESourceControlWCCName</key>
+			<string>sfdp-lite</string>
+		</dict>
+	</array>
+</dict>
+</plist>
