@@ -12,6 +12,7 @@
 #include <limits.h>
 #include <unistd.h>
 #include <math.h>
+#include <libgen.h>
 
 #include "lib/mmio/mmio.h"
 
@@ -143,7 +144,7 @@ void draw_embedding(SparseMatrix A, real *x, arguments_t *args){
             //get an integer id mapping for dist
             int id = floor(dist*1024);
             //get the correct id from jet which is in reverse order
-            id = 1024 - id;
+            //id = 1024 - id;
      
             if (args->isJet) {
                 cairo_set_source_rgba (cr, jet[id][0], jet[id][1], jet[id][2], args->alpha);
@@ -261,11 +262,11 @@ static void tuneControl(spring_electrical_control ctrl) {
     ctrl->K = -1;
     ctrl->q = -2.0;
     ctrl->p = -1.0 * -AUTOP;
-    //ctrl->tol = 0.00000001;
+    //ctrl->tol = 0.0000000001;
     ctrl->multilevels = INT_MAX;
     ctrl->smoothing = SMOOTHING_NONE;
     ctrl->tscheme = QUAD_TREE_NORMAL;
-    //ctrl->method = METHOD_SPRING_ELECTRICAL;
+    ctrl->method = METHOD_SPRING_ELECTRICAL;
     ctrl->beautify_leaves = TRUE;
     ctrl->do_shrinking = TRUE;
     ctrl->rotation = 0.0;
@@ -452,9 +453,35 @@ print_version() {
     printf("sfdp-lite %s\n", VERSION_NUM);
 }
 
+char *newFilename(char *inFile, const char *ext) {
+    char *dirN = dirname(inFile);
+    unsigned long dirL = strlen(dirN);
+
+    char *baseN = basename(inFile);
+    unsigned long baseL = strlen(baseN);
+    unsigned long extL = strlen(ext);
+    
+    long idxLastPoint=baseL+1;
+    while (baseN[--idxLastPoint] != '.' && idxLastPoint >= 0);
+    
+    char *outFN = malloc(dirL + 1 + idxLastPoint + extL + 1);
+    
+    memcpy(outFN, dirN, dirL);
+
+    outFN[dirL] = '/';
+    
+    memcpy(outFN+dirL+1, baseN, idxLastPoint);
+    
+    memcpy(outFN+dirL+1+idxLastPoint, ext, extL);
+    
+    outFN[dirL + 1 + idxLastPoint + extL]='\0';
+    
+    return outFN;
+}
+
 int main(int argc, const char * argv[]) {
     int i;
-    arguments_t args = {NULL, NULL, NULL, NULL, NULL, NULL, 100, 100, 0.5, TRUE, FALSE};
+    arguments_t args = {NULL, NULL, NULL, NULL, NULL, NULL, 200, 200, 0.5, TRUE, FALSE};
     for (i=1; i<argc-1;i++){
         if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i],"--output") == 0) {
             if (i+1 > argc) { usage(1); }
@@ -503,9 +530,19 @@ int main(int argc, const char * argv[]) {
         }
     }
     args.inputFile = (char*) argv[i];
+    if (args.outputFile == NULL) {
+        //this leaks but for now it is not a problem since it should stay until the end
+        args.outputFile = newFilename(args.inputFile, ".png");
+        printf("image will be generated in %s\n",args.outputFile);
+    }
+    
+    if (args.positionFile == NULL) {
+        args.positionFile = newFilename(args.inputFile, ".pos");
+    }
     
     return sfdp_main(&args);
 }
+
 
 
 
