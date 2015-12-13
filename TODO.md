@@ -3,6 +3,9 @@ sfdp-lite
 
 sfdp-lite is a simple graph layout tool that relies on the Graphviz sfdp algorithm to compute the layout of large graphs in Matrix Market format.
 
+<img src="http://farm8.staticflickr.com/7311/12060748443_6b1736a453_b.jpg" width="400">
+
+
 TODO
 ======
 - Check that trace drawing works, and implement exporter in OBP
